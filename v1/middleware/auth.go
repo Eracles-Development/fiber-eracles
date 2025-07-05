@@ -1,38 +1,11 @@
 package middleware
 
 import (
-	"errors"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-)
-
-// Constantes para mensajes de error (evita allocaciones repetidas)
-const (
-	ErrMissingAuth      = "unauthorized - missing or invalid authorization header"
-	ErrInvalidSigning   = "unauthorized - invalid signing method"
-	ErrInvalidToken     = "unauthorized - invalid token"
-	ErrInvalidClaims    = "unauthorized - invalid claims"
-	ErrTokenExpired     = "unauthorized - token expired"
-	ErrInvalidIP        = "unauthorized - invalid ip"
-	ErrUserNotVerif     = "unauthorized - user not verified"
-	ErrInvalidRole      = "unauthorized - invalid role"
-	ErrInvalidRoleClaim = "unauthorized - invalid role claim"
-)
-
-// Variables de error reutilizables
-var (
-	errMissingAuth      = errors.New(ErrMissingAuth)
-	errInvalidSigning   = errors.New(ErrInvalidSigning)
-	errInvalidToken     = errors.New(ErrInvalidToken)
-	errInvalidClaims    = errors.New(ErrInvalidClaims)
-	errTokenExpired     = errors.New(ErrTokenExpired)
-	errInvalidIP        = errors.New(ErrInvalidIP)
-	errUserNotVerif     = errors.New(ErrUserNotVerif)
-	errInvalidRole      = errors.New(ErrInvalidRole)
-	errInvalidRoleClaim = errors.New(ErrInvalidRoleClaim)
 )
 
 func JwtRoleMiddleware(pass bool, devops bool, secret string, role ...string) fiber.Handler {
