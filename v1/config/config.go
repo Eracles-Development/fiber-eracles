@@ -54,8 +54,7 @@ func SetupBasicHCFiber(app *fiber.App, isDev bool, appName string) {
 
 		Σracles Software Company
 
-		Developed by: The Σracles Team
-        App Name: ` + appName)
+		Developed by: The Σracles Team`)
 
 	setupLive(app)
 
