@@ -82,7 +82,6 @@ func setupSwagger(app *fiber.App, isDev bool, appName string) {
 
 		SwaggerConfig := swagger.Config{
 			FilePath: swaggerDir,
-			Path:     "/BibliothecAlexandrina",
 			Title:    appName,
 		}
 
