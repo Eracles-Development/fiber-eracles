@@ -40,7 +40,7 @@ func IsDev() bool {
 
 // Establece los endpoints basicos de la aplicación Fiber
 // Configura el middleware de salud, prometheus y swagger
-func SetupBasicHCFiber(app *fiber.App, isDev bool, appName string) {
+func SetupBasicHCFiber(app *fiber.App, isDev bool) {
 
 	log.Println(
 		`
@@ -60,7 +60,7 @@ func SetupBasicHCFiber(app *fiber.App, isDev bool, appName string) {
 
 	setupPrometheus(app)
 
-	setupSwagger(app, isDev, appName)
+	setupSwagger(app, isDev)
 
 }
 
@@ -68,9 +68,10 @@ func setupPrometheus(app *fiber.App) {
 	prometheus := fiberprometheus.New(os.Getenv("APP_NAME"))
 	prometheus.RegisterAt(app, "/Oracle")
 	app.Use(prometheus.Middleware)
+	log.Println("Prometheus enabled in /Oracle")
 }
 
-func setupSwagger(app *fiber.App, isDev bool, appName string) {
+func setupSwagger(app *fiber.App, isDev bool) {
 
 	if isDev {
 		swaggerDir := "/app/docs/swagger.json"
@@ -81,11 +82,10 @@ func setupSwagger(app *fiber.App, isDev bool, appName string) {
 
 		SwaggerConfig := swagger.Config{
 			FilePath: swaggerDir,
-			Title:    appName,
 		}
 
 		app.Use(swagger.New(SwaggerConfig))
-
+		log.Println("Swagger UI enabled in /docs")
 	}
 }
 
@@ -93,6 +93,7 @@ func setupLive(app *fiber.App) {
 	app.Get("/ERACLESlives", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
+	log.Println("LiveDoc enabled in /ERACLESlives")
 }
 
 // LiveDoc Healthcheck endpoint
@@ -123,8 +124,8 @@ func metricsDoc(c *fiber.Ctx) error {
 // @Tags         Documentation
 // @Produce      html
 // @Success      200 {string} string "Swagger UI"
-// @Router       /BibliothecAlexandrina [get]
+// @Router       /docs [get]
 func swaggerDoc(c *fiber.Ctx) error {
 	// Redirige al path donde se sirve el Swagger UI
-	return c.Redirect("/BibliothecAlexandrina", fiber.StatusFound)
+	return c.Redirect("/docs", fiber.StatusFound)
 }
