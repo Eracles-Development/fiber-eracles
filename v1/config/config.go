@@ -42,6 +42,23 @@ func IsDev() bool {
 // Necesita variable de entorno APP_NAME
 func SetupBasicHCFiber(app *fiber.App, isDev bool) {
 
+	log.Println(
+		`
+
+        ███████╗██████╗░░█████╗░░█████╗░██╗░░░░░███████╗░██████╗
+        ██╔════╝██╔══██╗██╔══██╗██╔══██╗██║░░░░░██╔════╝██╔════╝
+        █████╗░░██████╔╝███████║██║░░╚═╝██║░░░░░█████╗░░╚█████╗░
+        ██╔══╝░░██╔══██╗██╔══██║██║░░██╗██║░░░░░██╔══╝░░░╚═══██╗
+        ███████╗██║░░██║██║░░██║╚█████╔╝███████╗███████╗██████╔╝
+        ╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░╚══════╝╚══════╝╚═════╝░
+
+		Σracles Software Company
+
+		Developed by:
+
+		The Σracles Team
+        `)
+
 	setupLive(app)
 
 	setupPrometheus(app)
