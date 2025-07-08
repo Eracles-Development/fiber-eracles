@@ -8,7 +8,22 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func JwtRoleMiddleware(pass bool, devops bool, secret string, role ...string) fiber.Handler {
+// JwtRoleMiddlewareConfig holds the configuration for the JWT role middleware
+type JwtRoleMiddlewareConfig struct {
+	devops bool
+	secret string
+}
+
+// NewJwtRoleMiddleware creates a new JWT role middleware with the specified configuration
+func NewJwtRoleMiddleware(devops bool, secret string) *JwtRoleMiddlewareConfig {
+	return &JwtRoleMiddlewareConfig{
+		devops: devops,
+		secret: secret,
+	}
+}
+
+// Handler returns a Fiber handler that validates JWT tokens and roles
+func (config *JwtRoleMiddlewareConfig) Handler(pass bool, role ...string) fiber.Handler {
 	// Pre-computar roles permitidos para evitar allocaciones en cada request
 	allowedRoles := make(map[string]bool, len(role)+3)
 	allowedRoles["superadmin"] = true
@@ -28,7 +43,7 @@ func JwtRoleMiddleware(pass bool, devops bool, secret string, role ...string) fi
 
 	return func(c *fiber.Ctx) error {
 		// Extraer y validar el JWT del header Authorization
-		claims, err := parseAndValidateJWT(c, secret)
+		claims, err := parseAndValidateJWT(c, config.secret)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": err.Error(),
@@ -36,7 +51,7 @@ func JwtRoleMiddleware(pass bool, devops bool, secret string, role ...string) fi
 		}
 
 		// Verificación básica de JWT
-		err = basicAuth(c, claims, devops)
+		err = basicAuth(c, claims, config.devops)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": err.Error(),

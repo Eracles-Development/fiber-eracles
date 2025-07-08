@@ -181,7 +181,8 @@ func TestJwtRoleMiddleware_Success(t *testing.T) {
 			token, err := generateTestJWT(tt.userCedula, tt.userRole, testIP, tt.userVerif, time.Now().Add(time.Hour))
 			assertNoError(t, err)
 
-			middlewareHandler := middleware.JwtRoleMiddleware(tt.pass, tt.devops, testSecret, tt.roles...)
+			config := middleware.NewJwtRoleMiddleware(tt.devops, testSecret)
+			middlewareHandler := config.Handler(tt.pass, tt.roles...)
 			app := createTestApp(middlewareHandler)
 
 			// Act
@@ -280,7 +281,8 @@ func TestJwtRoleMiddleware_AuthenticationErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, "admin")
+			config := middleware.NewJwtRoleMiddleware(false, testSecret)
+			middlewareHandler := config.Handler(false, "admin")
 			app := createTestApp(middlewareHandler)
 
 			// Act
@@ -359,7 +361,8 @@ func TestJwtRoleMiddleware_RoleVerification(t *testing.T) {
 			token, err := generateTestJWT("12345678", tt.userRole, testIP, true, time.Now().Add(time.Hour))
 			assertNoError(t, err, tt.description)
 
-			middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, tt.allowedRoles...)
+			config := middleware.NewJwtRoleMiddleware(false, testSecret)
+			middlewareHandler := config.Handler(false, tt.allowedRoles...)
 			app := createTestApp(middlewareHandler)
 
 			// Act
@@ -382,7 +385,8 @@ func TestJwtRoleMiddleware_LocalsHandling(t *testing.T) {
 		token, err := generateTestJWT(cedula, role, testIP, true, time.Now().Add(time.Hour))
 		assertNoError(t, err)
 
-		middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, "admin")
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		middlewareHandler := config.Handler(false, "admin")
 		app := createTestApp(middlewareHandler)
 
 		// Act
@@ -407,7 +411,8 @@ func TestJwtRoleMiddleware_LocalsHandling(t *testing.T) {
 		token, err := generateTestJWT(cedula, role, testIP, true, time.Now().Add(time.Hour))
 		assertNoError(t, err)
 
-		middlewareHandler := middleware.JwtRoleMiddleware(true, false, testSecret, "admin")
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		middlewareHandler := config.Handler(true, "admin")
 		app := createTestApp(middlewareHandler)
 
 		// Act
@@ -447,7 +452,8 @@ func TestJwtRoleMiddleware_EdgeCases(t *testing.T) {
 			tokenString = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature"
 		}
 
-		middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, "admin")
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		middlewareHandler := config.Handler(false, "admin")
 		app := createTestApp(middlewareHandler)
 
 		// Act
@@ -470,7 +476,8 @@ func TestJwtRoleMiddleware_EdgeCases(t *testing.T) {
 		tokenString, err := token.SignedString([]byte(testSecret))
 		assertNoError(t, err)
 
-		middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, "admin")
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		middlewareHandler := config.Handler(false, "admin")
 		app := createTestApp(middlewareHandler)
 
 		// Act
@@ -490,7 +497,8 @@ func BenchmarkJwtRoleMiddleware_ValidToken(b *testing.B) {
 		b.Fatalf("Failed to generate test token: %v", err)
 	}
 
-	middlewareHandler := middleware.JwtRoleMiddleware(false, false, testSecret, "admin")
+	config := middleware.NewJwtRoleMiddleware(false, testSecret)
+	middlewareHandler := config.Handler(false, "admin")
 	app := createTestApp(middlewareHandler)
 
 	b.ResetTimer()
@@ -505,3 +513,163 @@ func BenchmarkJwtRoleMiddleware_ValidToken(b *testing.B) {
 		}
 	}
 }
+
+// =============================================================================
+// NEW API TESTS
+// =============================================================================
+
+// TestJwtRoleMiddleware_Configuration tests the middleware configuration API
+func TestJwtRoleMiddleware_Configuration(t *testing.T) {
+	t.Run("Should create middleware with devops=false and secret", func(t *testing.T) {
+		// Arrange
+		devops := false
+		secret := "my-secret-key"
+		config := middleware.NewJwtRoleMiddleware(devops, secret)
+
+		// Act
+		handler := config.Handler(false, "admin")
+
+		// Assert
+		if handler == nil {
+			t.Fatal("Expected handler to be created, got nil")
+		}
+	})
+
+	t.Run("Should create middleware with devops=true and secret", func(t *testing.T) {
+		// Arrange
+		devops := true
+		secret := "my-secret-key"
+		config := middleware.NewJwtRoleMiddleware(devops, secret)
+
+		// Act
+		handler := config.Handler(false, "admin")
+
+		// Assert
+		if handler == nil {
+			t.Fatal("Expected handler to be created, got nil")
+		}
+	})
+}
+
+// TestJwtRoleMiddleware_Usage tests the middleware usage pattern
+func TestJwtRoleMiddleware_Usage(t *testing.T) {
+	t.Run("Should work with devops=false configuration", func(t *testing.T) {
+		// Arrange
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		token, err := generateTestJWT("12345678", "admin", testIP, true, time.Now().Add(time.Hour))
+		assertNoError(t, err)
+
+		// Create handler with pass=false and admin role
+		handler := config.Handler(false, "admin")
+		app := createTestApp(handler)
+
+		// Act
+		req := createTestRequest("GET", "/test", "Bearer "+token)
+		resp, err := app.Test(req)
+
+		// Assert
+		assertNoError(t, err)
+		assertEqual(t, 200, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		assertNoError(t, err)
+		responseBody := string(body)
+		assertContains(t, responseBody, "success")
+		assertContains(t, responseBody, "12345678")
+		assertContains(t, responseBody, "admin")
+	})
+
+	t.Run("Should work with devops=true configuration for unverified user", func(t *testing.T) {
+		// Arrange
+		config := middleware.NewJwtRoleMiddleware(true, testSecret)
+		token, err := generateTestJWT("12345678", "admin", testIP, false, time.Now().Add(time.Hour))
+		assertNoError(t, err)
+
+		// Create handler with pass=false and admin role
+		handler := config.Handler(false, "admin")
+		app := createTestApp(handler)
+
+		// Act
+		req := createTestRequest("GET", "/test", "Bearer "+token)
+		resp, err := app.Test(req)
+
+		// Assert
+		assertNoError(t, err)
+		assertEqual(t, 200, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		assertNoError(t, err)
+		responseBody := string(body)
+		assertContains(t, responseBody, "success")
+	})
+}
+
+// TestJwtRoleMiddleware_Reusability tests middleware reusability
+func TestJwtRoleMiddleware_Reusability(t *testing.T) {
+	t.Run("Should reuse same config for multiple handlers", func(t *testing.T) {
+		// Arrange
+		config := middleware.NewJwtRoleMiddleware(false, testSecret)
+		token, err := generateTestJWT("12345678", "admin", testIP, true, time.Now().Add(time.Hour))
+		assertNoError(t, err)
+
+		// Create multiple handlers with different configurations
+		adminHandler := config.Handler(false, "admin")
+		userHandler := config.Handler(false, "user", "moderator")
+		passHandler := config.Handler(true, "admin")
+
+		// Test admin handler
+		app1 := createTestApp(adminHandler)
+		req1 := createTestRequest("GET", "/test", "Bearer "+token)
+		resp1, err := app1.Test(req1)
+		assertNoError(t, err)
+		assertEqual(t, 200, resp1.StatusCode)
+
+		// Test user handler (should fail as token has admin role)
+		app2 := createTestApp(userHandler)
+		req2 := createTestRequest("GET", "/test", "Bearer "+token)
+		resp2, err := app2.Test(req2)
+		assertNoError(t, err)
+		assertEqual(t, 401, resp2.StatusCode)
+
+		// Test pass handler (should succeed and not set locals)
+		app3 := createTestApp(passHandler)
+		req3 := createTestRequest("GET", "/test", "Bearer "+token)
+		resp3, err := app3.Test(req3)
+		assertNoError(t, err)
+		assertEqual(t, 200, resp3.StatusCode)
+
+		body, err := io.ReadAll(resp3.Body)
+		assertNoError(t, err)
+		responseBody := string(body)
+		assertContains(t, responseBody, "null") // pass=true should not set locals
+	})
+}
+
+// TestJwtRoleMiddleware_DifferentSecrets tests middleware with different secrets
+func TestJwtRoleMiddleware_DifferentSecrets(t *testing.T) {
+	t.Run("Should fail with wrong secret", func(t *testing.T) {
+		// Arrange
+		config := middleware.NewJwtRoleMiddleware(false, "wrong-secret")
+		token, err := generateTestJWT("12345678", "admin", testIP, true, time.Now().Add(time.Hour))
+		assertNoError(t, err)
+
+		handler := config.Handler(false, "admin")
+		app := createTestApp(handler)
+
+		// Act
+		req := createTestRequest("GET", "/test", "Bearer "+token)
+		resp, err := app.Test(req)
+
+		// Assert
+		assertNoError(t, err)
+		assertEqual(t, 401, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		assertNoError(t, err)
+		responseBody := string(body)
+		assertContains(t, responseBody, "invalid token")
+	})
+}
+
+// BenchmarkJwtRoleMiddleware_ValidToken benchmarks the middleware API
+// (Esta función ya está definida antes, así que eliminamos esta duplicada)
