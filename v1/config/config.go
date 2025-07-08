@@ -13,6 +13,7 @@ import (
 // Carga las variables de entorno probando las posibles rutas si es nativo o docker
 func LoadEnv() error {
 	envPaths := []string{
+		".env",
 		"../.env",
 		"../../.env",
 	}
@@ -39,8 +40,7 @@ func IsDev() bool {
 
 // Establece los endpoints basicos de la aplicación Fiber
 // Configura el middleware de salud, prometheus y swagger
-// Necesita variable de entorno APP_NAME
-func SetupBasicHCFiber(app *fiber.App, isDev bool) {
+func SetupBasicHCFiber(app *fiber.App, isDev bool, appName string) {
 
 	log.Println(
 		`
@@ -54,16 +54,14 @@ func SetupBasicHCFiber(app *fiber.App, isDev bool) {
 
 		Σracles Software Company
 
-		Developed by:
-
-		The Σracles Team
-        `)
+		Developed by: The Σracles Team
+        App Name: ` + appName)
 
 	setupLive(app)
 
 	setupPrometheus(app)
 
-	setupSwagger(app, isDev)
+	setupSwagger(app, isDev, appName)
 
 }
 
@@ -73,7 +71,7 @@ func setupPrometheus(app *fiber.App) {
 	app.Use(prometheus.Middleware)
 }
 
-func setupSwagger(app *fiber.App, isDev bool) {
+func setupSwagger(app *fiber.App, isDev bool, appName string) {
 
 	if isDev {
 		swaggerDir := "/app/docs/swagger.json"
@@ -85,7 +83,7 @@ func setupSwagger(app *fiber.App, isDev bool) {
 		SwaggerConfig := swagger.Config{
 			FilePath: swaggerDir,
 			Path:     "/BibliothecAlexandrina",
-			Title:    os.Getenv("APP_NAME"),
+			Title:    appName,
 		}
 
 		app.Use(swagger.New(SwaggerConfig))
