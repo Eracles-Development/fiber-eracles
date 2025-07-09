@@ -132,7 +132,7 @@ func jwtRolVerification(c *fiber.Ctx, pass bool, claims jwt.MapClaims, allowedRo
 		return errInvalidRole
 	}
 
-	if !pass {
+	if pass {
 		if cedula, ok := claims["cedula"]; ok {
 			c.Locals("cedula", cedula)
 		}
