@@ -13,7 +13,7 @@ import (
 
 // FiberNewJwtRoleMiddleware creates middleware using environment variables
 // Panics if JWT_SECRET is not set to fail fast on misconfiguration
-func FiberNewJwtRoleMiddleware(validateIP bool) *jwtRoleMiddlewareConfig {
+func FiberNewJwtRoleMiddleware(validateIP bool) *JwtRoleMiddlewareConfig {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		panic("JWT_SECRET environment variable is required but not set")
@@ -24,14 +24,14 @@ func FiberNewJwtRoleMiddleware(validateIP bool) *jwtRoleMiddlewareConfig {
 	privateKey := ed25519.NewKeyFromSeed(hash[:])
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
-	return &jwtRoleMiddlewareConfig{
+	return &JwtRoleMiddlewareConfig{
 		publicKey:  publicKey,
 		validateIP: validateIP,
 	}
 }
 
 // Handler returns a Fiber handler that validates JWT tokens and roles
-func (config *jwtRoleMiddlewareConfig) Handler(pass bool, roles ...string) fiber.Handler {
+func (config *JwtRoleMiddlewareConfig) Handler(pass bool, roles ...string) fiber.Handler {
 	// Pre-computar roles permitidos para evitar allocaciones en cada request
 	allowedRoles := make(map[string]bool, len(roles)+1)
 	allowedRoles["superadmin"] = true // superadmin siempre tiene acceso
@@ -68,7 +68,7 @@ func (config *jwtRoleMiddlewareConfig) Handler(pass bool, roles ...string) fiber
 }
 
 // parseAndValidateJWT extrae y valida el JWT del header Authorization
-func (config *jwtRoleMiddlewareConfig) parseAndValidateJWT(c *fiber.Ctx) (jwt.MapClaims, error) {
+func (config *JwtRoleMiddlewareConfig) parseAndValidateJWT(c *fiber.Ctx) (jwt.MapClaims, error) {
 	authHeader := c.Get("Authorization")
 	if len(authHeader) < 7 || !strings.HasPrefix(authHeader, "Bearer ") {
 		return nil, errMissingAuth
@@ -96,7 +96,7 @@ func (config *jwtRoleMiddlewareConfig) parseAndValidateJWT(c *fiber.Ctx) (jwt.Ma
 }
 
 // basicAuth performs basic JWT validation
-func (config *jwtRoleMiddlewareConfig) basicAuth(c *fiber.Ctx, claims jwt.MapClaims) error {
+func (config *JwtRoleMiddlewareConfig) basicAuth(c *fiber.Ctx, claims jwt.MapClaims) error {
 	// Verificar la expiración del token
 	exp, ok := claims["exp"].(float64)
 	if !ok {
@@ -117,7 +117,7 @@ func (config *jwtRoleMiddlewareConfig) basicAuth(c *fiber.Ctx, claims jwt.MapCla
 }
 
 // jwtRoleVerification verifica si el usuario tiene un rol permitido y setea los datos locales si corresponde
-func (config *jwtRoleMiddlewareConfig) jwtRoleVerification(c *fiber.Ctx, pass bool, claims jwt.MapClaims, allowedRoles map[string]bool) error {
+func (config *JwtRoleMiddlewareConfig) jwtRoleVerification(c *fiber.Ctx, pass bool, claims jwt.MapClaims, allowedRoles map[string]bool) error {
 	// Extraer roles del usuario (puede ser un array)
 	userRoles, ok := claims["rol"].([]interface{})
 	if !ok {
