@@ -3,7 +3,6 @@ package middleware
 import (
 	"crypto/ed25519"
 	"crypto/sha256"
-	"os"
 	"strings"
 	"time"
 
@@ -13,10 +12,9 @@ import (
 
 // FiberNewJwtRoleMiddleware creates middleware using environment variables
 // Panics if JWT_SECRET is not set to fail fast on misconfiguration
-func FiberNewJwtRoleMiddlewareVionetLegacy(validateIP bool) *JwtRoleMiddlewareConfigVionet {
-	secret := os.Getenv("JWT_SECRET")
+func FiberNewJwtRoleMiddlewareVionetLegacy(validateIP bool, secret string) *JwtRoleMiddlewareConfigVionet {
 	if secret == "" {
-		panic("JWT_SECRET environment variable is required but not set")
+		panic("JWT_SECRET is neccesary")
 	}
 
 	// Derivar clave pública Ed25519 desde JWT_SECRET

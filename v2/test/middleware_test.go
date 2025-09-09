@@ -172,7 +172,7 @@ func TestFiberNewJwtRoleMiddleware(t *testing.T) {
 	t.Run("ValidSecret", func(t *testing.T) {
 		os.Setenv("JWT_SECRET", testSecret)
 
-		config := middleware.FiberNewJwtRoleMiddleware(true)
+		config := middleware.FiberNewJwtRoleMiddleware(true, "secreto")
 		if config == nil {
 			t.Fatal("Expected config to be created, got nil")
 		}
@@ -187,7 +187,7 @@ func TestFiberNewJwtRoleMiddleware(t *testing.T) {
 			}
 		}()
 
-		middleware.FiberNewJwtRoleMiddleware(false)
+		middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 	})
 
 	t.Run("EmptySecret", func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestFiberNewJwtRoleMiddleware(t *testing.T) {
 			}
 		}()
 
-		middleware.FiberNewJwtRoleMiddleware(true)
+		middleware.FiberNewJwtRoleMiddleware(true, "secreto")
 	})
 }
 
@@ -209,7 +209,7 @@ func TestMiddlewareHandler(t *testing.T) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 
 	t.Run("ValidTokenWithRole", func(t *testing.T) {
 		handler := config.Handler(true, "admin")
@@ -394,7 +394,7 @@ func TestIPValidation(t *testing.T) {
 	td := setupTestData()
 
 	t.Run("IPValidationEnabled_CorrectIP", func(t *testing.T) {
-		config := middleware.FiberNewJwtRoleMiddleware(true)
+		config := middleware.FiberNewJwtRoleMiddleware(true, "secreto")
 		handler := config.Handler(false, "admin")
 		app := createTestApp(handler)
 
@@ -409,7 +409,7 @@ func TestIPValidation(t *testing.T) {
 	})
 
 	t.Run("IPValidationEnabled_WrongIP", func(t *testing.T) {
-		config := middleware.FiberNewJwtRoleMiddleware(true)
+		config := middleware.FiberNewJwtRoleMiddleware(true, "secreto")
 		handler := config.Handler(false, "admin")
 		app := createTestApp(handler)
 
@@ -434,7 +434,7 @@ func TestIPValidation(t *testing.T) {
 	})
 
 	t.Run("IPValidationDisabled_WrongIP", func(t *testing.T) {
-		config := middleware.FiberNewJwtRoleMiddleware(false)
+		config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 		handler := config.Handler(false, "admin")
 		app := createTestApp(handler)
 
@@ -455,7 +455,7 @@ func TestMultipleRoles(t *testing.T) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 
 	t.Run("MultipleAllowedRoles", func(t *testing.T) {
 		handler := config.Handler(false, "admin", "user", "moderator")
@@ -499,7 +499,7 @@ func TestLocalsPassthrough(t *testing.T) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 
 	t.Run("PassEnabled", func(t *testing.T) {
 		handler := config.Handler(true, "admin")
@@ -554,7 +554,7 @@ func TestEdgeCases(t *testing.T) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 
 	t.Run("EmptyRolesList", func(t *testing.T) {
 		handler := config.Handler(false) // No roles specified
@@ -640,7 +640,7 @@ func BenchmarkMiddlewareValidRequest(b *testing.B) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 	handler := config.Handler(true, "admin")
 	app := createTestApp(handler)
 
@@ -663,7 +663,7 @@ func BenchmarkMiddlewareInvalidRequest(b *testing.B) {
 	defer os.Unsetenv("JWT_SECRET")
 
 	td := setupTestData()
-	config := middleware.FiberNewJwtRoleMiddleware(false)
+	config := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 	handler := config.Handler(false, "admin")
 	app := createTestApp(handler)
 

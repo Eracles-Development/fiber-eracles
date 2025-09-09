@@ -50,7 +50,7 @@ func TestIntegrationScenarios(t *testing.T) {
 		})
 
 		// Endpoint para usuarios autenticados (sin IP validation)
-		configNoIP := middleware.FiberNewJwtRoleMiddleware(false)
+		configNoIP := middleware.FiberNewJwtRoleMiddleware(false, "sescreto")
 		app.Get("/user", configNoIP.Handler(true, "user"), func(c *fiber.Ctx) error {
 			email := c.Locals("email")
 			return c.JSON(fiber.Map{
@@ -171,7 +171,7 @@ func TestIntegrationScenarios(t *testing.T) {
 	})
 
 	t.Run("HighLoadScenario", func(t *testing.T) {
-		configLoad := middleware.FiberNewJwtRoleMiddleware(false)
+		configLoad := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 		handler := configLoad.Handler(false, "user")
 
 		app := fiber.New()
@@ -221,7 +221,7 @@ func TestIntegrationScenarios(t *testing.T) {
 	})
 
 	t.Run("SessionManagement", func(t *testing.T) {
-		configSession := middleware.FiberNewJwtRoleMiddleware(false) // Disable IP validation for test
+		configSession := middleware.FiberNewJwtRoleMiddleware(false, "secreto") // Disable IP validation for test
 		handler := configSession.Handler(true, "user")
 
 		app := fiber.New()
@@ -268,7 +268,7 @@ func TestIntegrationScenarios(t *testing.T) {
 	})
 
 	t.Run("TokenRotationScenario", func(t *testing.T) {
-		configRotation := middleware.FiberNewJwtRoleMiddleware(false)
+		configRotation := middleware.FiberNewJwtRoleMiddleware(false, "secreto")
 		handler := configRotation.Handler(false, "user")
 
 		app := fiber.New()
@@ -346,7 +346,7 @@ func TestRealWorldErrorScenarios(t *testing.T) {
 
 	os.Setenv("JWT_SECRET", integrationTestSecret)
 
-	configError := middleware.FiberNewJwtRoleMiddleware(false) // Disable IP validation for error tests
+	configError := middleware.FiberNewJwtRoleMiddleware(false, "secreto") // Disable IP validation for error tests
 	handler := configError.Handler(false, "user")
 
 	app := fiber.New()
